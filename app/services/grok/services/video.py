@@ -994,7 +994,7 @@ class VideoStreamProcessor(BaseProcessor):
             logger.warning(f"Video upscale failed: {e}")
         return video_url
 
-    def _sse(self, content: str = "", role: str = None, finish: str = None, post_id: str = None) -> str:
+    def _sse(self, content: str = "", role: str = None, finish: str = None) -> str:
         """Build SSE response."""
         delta = {}
         if role:
@@ -1002,9 +1002,6 @@ class VideoStreamProcessor(BaseProcessor):
             delta["content"] = ""
         elif content:
             delta["content"] = content
-        
-        if post_id:
-            delta["post_id"] = post_id
 
         chunk = {
             "id": self.response_id or f"chatcmpl-{uuid.uuid4().hex[:24]}",
@@ -1096,7 +1093,7 @@ class VideoStreamProcessor(BaseProcessor):
                             rendered = await dl_service.render_video(
                                 video_url, self.token, thumbnail_url
                             )
-                            yield self._sse(rendered, post_id=video_post_id)
+                            yield self._sse(rendered)
 
                             logger.info(f"Video generated: {video_url} (post_id={video_post_id})")
                     continue
@@ -1400,13 +1397,11 @@ class VideoCollectProcessor(BaseProcessor):
                         "role": "assistant",
                         "content": content,
                         "refusal": None,
-                        "post_id": post_id,
                     },
                     "finish_reason": "stop",
                 }
             ],
             "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
-            "post_id": post_id,
         }
 
 

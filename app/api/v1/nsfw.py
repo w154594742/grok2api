@@ -558,12 +558,10 @@ async def _generate_nsfw_inner(data: NSFWRequest) -> Dict[str, Any]:
                         "index": index,
                         "image_url": image_url,
                         "parent_post_id": parent_post_id,
-                        "post_id": task_post_id,
                         "error": "parent_post_video_not_ready",
                         "url": "",
                         "poster_url": "",
                         "content": video_content,
-                        "raw_response": raw_video_response,
                     }
                 return {
                     "index": index,
@@ -571,19 +569,16 @@ async def _generate_nsfw_inner(data: NSFWRequest) -> Dict[str, Any]:
                     "content": video_content,
                     "url": _clean_url(video_url),
                     "poster_url": _clean_url(poster_url),
-                    "raw_response": raw_video_response,
                     "parent_post_id": parent_post_id,
-                    "post_id": task_post_id,
                 }
             except Exception as e:
                 logger.warning(f"NSFW video failed: {task_tag}, error={e}")
-                # 从 processor 中尝试挽救 post_id
+                # 从 processor 中尝试挽救 post_id (内部记录用，不再返回)
                 rescue_post_id = getattr(locals().get("processor"), "video_post_id", "") or task_post_id
                 return {
                     "index": index,
                     "image_url": image_url,
                     "parent_post_id": parent_post_id,
-                    "post_id": rescue_post_id,
                     "error": str(e),
                     "url": "",
                     "poster_url": "",
@@ -615,17 +610,8 @@ async def _generate_nsfw_inner(data: NSFWRequest) -> Dict[str, Any]:
                 clean_links.append(cu)
 
     lines = ["返回链接:"]
-    for idx, u in enumerate(images, 1):
-        lines.append(f"{idx}. (Image) {u}")
-    
-    for idx, item in enumerate(video_results, 1):
-        v_url = _clean_url(item.get("url", ""))
-        p_id = item.get("post_id", "")
-        if v_url:
-            msg = f"{idx}. (Video) {v_url}"
-            if p_id:
-                msg += f" (post_id: {p_id})"
-            lines.append(msg)
+    for idx, u in enumerate(clean_links, 1):
+        lines.append(f"{idx}. {u}")
 
     response_payload["result"] = "\n".join(lines)
     return response_payload
